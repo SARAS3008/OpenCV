@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>工业图像处理节点编辑器 - OpenCV Morphology MVP</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <h1>OpenCV 节点式图像处理</h1>
+        <p>ComfyUI 风格 MVP：拖拽节点、连接流程、执行形态学操作。</p>
+      </div>
+      <div class="actions">
+        <label class="file-button">
+          上传工业图像
+          <input id="imageInput" type="file" accept="image/*" />
+        </label>
+        <button id="loadDemoBtn">使用内置演示图</button>
+        <button id="runBtn" class="primary">执行工作流</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="panel palette-panel">
+        <h2>节点库</h2>
+        <div class="palette-node" draggable="true" data-node-type="morphology">
+          <span class="node-icon">M</span>
+          <div>
+            <strong>形态学操作</strong>
+            <small>腐蚀、膨胀、开闭运算等</small>
+          </div>
+        </div>
+        <div class="hint">
+          将节点拖入画布。点击端口连线：先点输出端口，再点输入端口。
+        </div>
+
+        <h2>当前工作流</h2>
+        <pre id="workflowJson" class="workflow-json"></pre>
+      </aside>
+
+      <section class="canvas-wrap">
+        <div id="canvas" class="node-canvas">
+          <svg id="linksLayer" class="links-layer"></svg>
+        </div>
+      </section>
+
+      <aside class="panel inspector-panel">
+        <h2>节点参数</h2>
+        <div id="emptyInspector" class="empty-state">选择一个形态学节点来编辑参数。</div>
+        <form id="inspector" class="inspector hidden">
+          <label>
+            操作类型
+            <select name="operation">
+              <option value="erode">腐蚀 Erode</option>
+              <option value="dilate">膨胀 Dilate</option>
+              <option value="open" selected>开运算 Open</option>
+              <option value="close">闭运算 Close</option>
+              <option value="gradient">形态学梯度 Gradient</option>
+              <option value="tophat">顶帽 Top-hat</option>
+              <option value="blackhat">黑帽 Black-hat</option>
+            </select>
+          </label>
+
+          <label>
+            输入模式
+            <select name="mode">
+              <option value="binary" selected>二值图 / 掩膜</option>
+              <option value="grayscale">灰度图</option>
+              <option value="color">彩色图逐通道</option>
+            </select>
+          </label>
+
+          <label>
+            阈值模式
+            <select name="thresholdMode">
+              <option value="manual" selected>手动阈值</option>
+              <option value="otsu">Otsu 自动阈值</option>
+            </select>
+          </label>
+
+          <label>
+            阈值 <span id="thresholdValue">128</span>
+            <input name="threshold" type="range" min="0" max="255" step="1" value="128" />
+          </label>
+
+          <label class="checkbox-line">
+            <input name="invert" type="checkbox" />
+            反相阈值，适合暗色缺陷检测
+          </label>
+
+          <label>
+            核形状
+            <select name="kernelShape">
+              <option value="rect" selected>矩形 Rect</option>
+              <option value="ellipse">椭圆 Ellipse</option>
+              <option value="cross">十字 Cross</option>
+            </select>
+          </label>
+
+          <label>
+            核大小 <span id="kernelValue">5</span>
+            <input name="kernelSize" type="range" min="1" max="31" step="2" value="5" />
+          </label>
+
+          <label>
+            迭代次数 <span id="iterationsValue">1</span>
+            <input name="iterations" type="range" min="1" max="10" step="1" value="1" />
+          </label>
+        </form>
+
+        <h2>效果演示</h2>
+        <div id="status" class="status">未执行</div>
+        <div class="preview-grid">
+          <div>
+            <div class="preview-title">原图</div>
+            <img id="originalPreview" alt="原图预览" />
+          </div>
+          <div>
+            <div class="preview-title">输出</div>
+            <img id="resultPreview" alt="处理结果预览" />
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
