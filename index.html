@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工业视觉流程编排器</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="tabs">
+      <div class="hamb">☰</div>
+      <div id="workflowTabs" class="workflow-tabs" role="tablist" aria-label="打开的工作流"></div>
+      <button id="newWorkflowButton" class="plus" type="button" title="新建工作流" aria-label="新建工作流">＋</button>
+    </div>
+    <div class="top-actions">
+      <button class="pill" onclick="downloadWorkflowJson()">⬇ 导出 JSON</button>
+      <label class="pill" for="workflowInput">⬆ 导入 JSON</label>
+      <input id="workflowInput" type="file" accept=".json,application/json" />
+      <button class="pill" onclick="createDemoWorkflow()">🧪 示例流程</button>
+      <button class="pill run" onclick="runWorkflow()">▶ 运行</button>
+      <button class="pill danger" onclick="clearWorkflow()">× 清空</button>
+      <div class="counter"><span id="taskCount">0</span>&nbsp;个活动任务</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <nav class="rail" aria-label="工作区导航">
+      <button id="nodeLibraryToggle" class="rail-item active" type="button" aria-expanded="true" aria-controls="nodeLibrary" title="隐藏节点库">▣<span>节点</span></button>
+      <button id="exportScriptButton" class="rail-item" type="button" title="导出当前流程为独立算法脚本">⇩<span>导出脚本</span></button>
+      <button class="rail-item" type="button" onclick="saveWorkflowLocal()" title="保存到服务端项目库">💾<span>保存项目</span></button>
+      <button class="rail-item" type="button" onclick="openProjectFromServer()" title="从服务端项目库打开">📂<span>打开项目</span></button>
+      <button class="rail-item" type="button" onclick="showModelManager()" title="查看已上传模型与缓存状态">◇<span>模型</span></button>
+      <div class="rail-item disabled" aria-disabled="true" title="模板功能尚未开放">☷<span>模板</span></div>
+      <div class="rail-spacer"></div>
+      <div class="rail-item disabled icon-only" aria-disabled="true" title="帮助功能尚未开放">?</div>
+      <div class="rail-item disabled icon-only" aria-disabled="true" title="设置功能尚未开放">⚙</div>
+    </nav>
+
+    <aside id="nodeLibrary" class="side" aria-hidden="false">
+      <section class="library-section image-library" aria-labelledby="imageLibraryTitle">
+        <div class="side-head">
+          <div id="imageLibraryTitle" class="side-title">图像节点库</div>
+          <div class="side-actions">
+            <button class="sq" onclick="collapseAllOperatorGroups()" title="按类别折叠图像节点库" aria-label="折叠图像节点库分类">▸</button>
+            <button class="sq" onclick="expandAllOperatorGroups()" title="展开图像节点库" aria-label="展开图像节点库分类">▾</button>
+          </div>
+        </div>
+        <div class="search-row"><input id="opSearch" class="search" placeholder="搜索图像处理算子..." oninput="renderOperatorPanel()" /></div>
+        <div id="operatorPanel" class="op-scroll"></div>
+      </section>
+
+      <section class="library-section logic-library" aria-labelledby="logicLibraryTitle">
+        <div class="side-head">
+          <div id="logicLibraryTitle" class="side-title">逻辑节点库</div>
+          <div class="side-actions">
+            <button class="sq" onclick="collapseAllLogicOperatorGroups()" title="按类别折叠逻辑节点库" aria-label="折叠逻辑节点库分类">▸</button>
+            <button class="sq" onclick="expandAllLogicOperatorGroups()" title="展开逻辑节点库" aria-label="展开逻辑节点库分类">▾</button>
+          </div>
+        </div>
+        <div class="search-row"><input id="logicSearch" class="search" placeholder="搜索条件、循环、变量..." oninput="renderOperatorPanel()" /></div>
+        <div id="logicOperatorPanel" class="op-scroll"></div>
+      </section>
+    </aside>
+
+    <section class="canvas-wrap">
+      <div class="canvas-toolbar">
+        <div class="tool-pill"><span class="tool-icon">⌘</span> 图形 / Workflow</div>
+        <div class="tool-pill"><span class="tool-icon">▣</span> 图像节点库与逻辑节点库 · 拖拽节点到画布</div>
+        <button id="beautifyLayoutButton" class="tool-button" type="button" onclick="beautifyWorkflowLayout()" title="按运行顺序自动整理节点位置，并优化连线排布">✨ 美化排线</button>
+        <button class="tool-button" type="button" onclick="createWorkflowModule()" title="把多个节点聚合为可命名功能模块">▦ 创建模块</button>
+      </div>
+      <div id="viewport" class="viewport">
+        <div id="world" class="world">
+          <svg id="edgeLayer" class="edge-layer"></svg>
+          <div id="nodeLayer" class="node-layer"></div>
+        </div>
+      </div>
+      <div id="toast" class="toast"><b id="toastTitle">错误</b><div id="toastText"></div></div>
+      <div class="bottom-controls">
+        <div class="minimap" title="点击导航到画布中的对应位置"><div class="minimap-head">导航视图 · 点击定位</div><div id="miniNodes"></div><div id="miniView" class="mini-view"></div></div>
+        <div class="zoom-box">
+          <button onclick="setZoom(zoom/1.1)">−</button>
+          <div id="zoomLabel" class="zoom-label">82%</div>
+          <button onclick="setZoom(zoom*1.1)">＋</button>
+          <button title="重置视图" onclick="resetView()">⟳</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right">
+      <div class="right-section">
+        <div class="right-title"><span>状态 / 节点信息</span><span class="kbd">参数在节点内编辑</span></div>
+        <div id="status" class="status">就绪。拖拽左侧算子到画布，连接端口后运行。</div>
+        <div id="paramPanel" class="param-card hint">请选择一个节点或连线</div>
+      </div>
+      <div id="previewWrap" class="preview-wrap">
+        <div class="right-title preview-title">
+          <span>运行预览</span>
+          <button id="previewToggle" class="preview-toggle" onclick="togglePreviewPanel()"><span class="arrow">▾</span><span id="previewToggleText">折叠</span></button>
+        </div>
+        <div id="previewScroll" class="preview-scroll"><div id="previewPanel"><div class="empty-preview">运行后显示每步处理结果</div></div></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="imageLightbox" class="image-lightbox" aria-hidden="true">
+  <div class="lightbox-backdrop" onclick="closeImageLightbox()"></div>
+  <div class="lightbox-dialog" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
+    <div class="lightbox-toolbar">
+      <div>
+        <strong id="lightboxTitle">节点原图</strong>
+        <span id="lightboxMeta" class="lightbox-meta"></span>
+      </div>
+      <div class="lightbox-actions">
+        <button id="lightboxDownload" class="lightbox-button" type="button">⇩ 下载</button>
+        <button id="lightboxRestore" class="lightbox-button primary" type="button">⊙ 恢复缩略图</button>
+        <button class="lightbox-button icon" type="button" onclick="closeImageLightbox()" aria-label="关闭">×</button>
+      </div>
+    </div>
+    <div class="lightbox-stage" onclick="closeImageLightbox()">
+      <img id="lightboxImage" alt="节点处理结果原图" />
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/api.js" defer></script>
+<script src="/assets/js/app/state_store.js" defer></script>
+<script src="/assets/js/app/state.js" defer></script>
+<script src="/assets/js/app/operators.js" defer></script>
+<script src="/assets/js/app/canvas.js" defer></script>
+<script src="/assets/js/app/actions.js" defer></script>
+<script src="/assets/js/app/minimap.js" defer></script>
+<script src="/assets/js/app/bootstrap.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+</body>
+</html>
