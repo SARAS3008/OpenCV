@@ -1,0 +1,263 @@
+{
+  "version": "2.3",
+  "nodes": [
+    {
+      "id": "read_image",
+      "type": "ReadImage",
+      "position": {
+        "x": -168,
+        "y": 519
+      },
+      "params": {
+        "image_path": "examples/images/bus.jpg"
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "yolo_detect",
+      "type": "YoloInfer",
+      "position": {
+        "x": 362,
+        "y": -9
+      },
+      "params": {
+        "model_path": "yolo26n-seg.pt",
+        "task": "segment",
+        "confidence": 0.35,
+        "iou": 0.45,
+        "imgsz": 640,
+        "max_det": 50,
+        "max_results": 50,
+        "class_indices": "",
+        "class_filter": "",
+        "include_geometry": "YES",
+        "max_geometry_points": 200,
+        "output_mode": "ANNOTATED",
+        "device": ""
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "select_top2",
+      "type": "YoloSelectTopDetections",
+      "position": {
+        "x": 892,
+        "y": 183
+      },
+      "params": {
+        "selection_mode": "MIXED_TOP_K",
+        "class_indices": "4",
+        "min_confidence": 0.35,
+        "top_k": 2,
+        "sort_by": "CONFIDENCE_DESC",
+        "require_exact_count": "YES"
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "display_result",
+      "type": "Display",
+      "position": {
+        "x": 1952,
+        "y": 537
+      },
+      "params": {},
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "n1",
+      "type": "MaskMinAreaRect",
+      "position": {
+        "x": 2874,
+        "y": 422
+      },
+      "params": {
+        "threshold": 1,
+        "invert_mask": "NO",
+        "select_mode": "LARGEST"
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "n2",
+      "type": "FilterContours",
+      "position": {
+        "x": 1409,
+        "y": 144
+      },
+      "params": {
+        "binary_mode": "INPUT_BINARY",
+        "threshold": 127,
+        "retrieval_mode": "EXTERNAL",
+        "approx_mode": "SIMPLE",
+        "sort_by": "perimeter",
+        "select_mode": "MAX",
+        "sort_order": "DESC",
+        "top_k": 1,
+        "nth_index": 0,
+        "min_area": 0,
+        "max_area": 0,
+        "min_perimeter": 0,
+        "max_perimeter": 0,
+        "min_width": 0,
+        "max_width": 0,
+        "min_height": 0,
+        "max_height": 0,
+        "max_points": 200,
+        "draw_all": "YES"
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "n3",
+      "type": "ApplyMask",
+      "position": {
+        "x": 2264,
+        "y": 1117
+      },
+      "params": {
+        "threshold": 1,
+        "invert_mask": "NO",
+        "resize_mask": "NO",
+        "bbox_mode": "UNION",
+        "background": "BLACK",
+        "output_mode": "MASKED"
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "n4",
+      "type": "FitLineFromEdges",
+      "position": {
+        "x": 4092,
+        "y": 651
+      },
+      "params": {
+        "threshold": 1,
+        "distance_type": "L2",
+        "min_points": 20,
+        "max_points": 5000,
+        "draw_points": "NO"
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "n5",
+      "type": "Canny",
+      "position": {
+        "x": 3563,
+        "y": 1356
+      },
+      "params": {
+        "threshold1": 50,
+        "threshold2": 150
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    },
+    {
+      "id": "n6",
+      "type": "PointLineDistance",
+      "position": {
+        "x": 3380,
+        "y": 250
+      },
+      "params": {
+        "point_x": 0,
+        "point_y": 0,
+        "x1": 0,
+        "y1": 0,
+        "x2": 100,
+        "y2": 0
+      },
+      "collapsed": false,
+      "color": "#8d9298"
+    }
+  ],
+  "edges": [
+    {
+      "source": "read_image",
+      "target": "yolo_detect",
+      "sourceHandle": "out",
+      "targetHandle": "in"
+    },
+    {
+      "source": "yolo_detect",
+      "target": "select_top2",
+      "sourceHandle": "detections",
+      "targetHandle": "detections"
+    },
+    {
+      "id": "e1783637911766_51c41",
+      "source": "display_result",
+      "sourceHandle": "out",
+      "target": "n1",
+      "targetHandle": "in"
+    },
+    {
+      "id": "e1783638138959_5442c",
+      "source": "read_image",
+      "sourceHandle": "out",
+      "target": "n3",
+      "targetHandle": "in"
+    },
+    {
+      "id": "e1783639551661_22fb2",
+      "source": "select_top2",
+      "sourceHandle": "mask1",
+      "target": "display_result",
+      "targetHandle": "in"
+    },
+    {
+      "id": "e1783639571387_06ec9",
+      "source": "select_top2",
+      "sourceHandle": "mask1",
+      "target": "n2",
+      "targetHandle": "in"
+    },
+    {
+      "id": "e1783639587974_af817",
+      "source": "select_top2",
+      "sourceHandle": "mask1",
+      "target": "n3",
+      "targetHandle": "mask"
+    },
+    {
+      "id": "e1783639698689_abaa6",
+      "source": "n3",
+      "sourceHandle": "out",
+      "target": "n5",
+      "targetHandle": "in"
+    },
+    {
+      "id": "e1783639702403_2e6e8",
+      "source": "n5",
+      "sourceHandle": "out",
+      "target": "n4",
+      "targetHandle": "in"
+    },
+    {
+      "id": "e1783639791882_fbb39",
+      "source": "n4",
+      "sourceHandle": "line",
+      "target": "n6",
+      "targetHandle": "line"
+    },
+    {
+      "id": "e1783640077320_7187f",
+      "source": "n1",
+      "sourceHandle": "center",
+      "target": "n6",
+      "targetHandle": "point"
+    }
+  ],
+  "modules": []
+}
